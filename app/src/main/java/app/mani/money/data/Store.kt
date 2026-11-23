@@ -66,7 +66,7 @@ class Store(context: Context) {
         val s = mState.value
         val names = s.categories.associate { it.id to it.name }
         return buildString {
-            append('﻿')
+            append(0xFEFF.toChar()) // byte-order mark: Excel then reads Cyrillic correctly
             appendLine("Дата;Тип;Категория;Сумма;Заметка")
             s.operations.sortedByDescending { it.date }.forEach { op ->
                 val sum = (if (op.kind == Kind.EXPENSE) -op.amount else op.amount).toBigDecimal().movePointLeft(2).toPlainString().replace('.', ',')
