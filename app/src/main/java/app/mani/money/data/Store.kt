@@ -46,6 +46,34 @@ class Store(context: Context) {
 
     fun settings(change: (Settings) -> Settings) = edit { s -> s.copy(settings = change(s.settings)) }
 
+    fun saveGoal(g: Goal): Goal {
+        val clean = g.copy(id = g.id.ifBlank { UUID.randomUUID().toString() }, name = g.name.trim().ifBlank { "Копилка" }.take(40), target = g.target.coerceAtLeast(0))
+        edit { s -> s.copy(goals = s.goals.filter { it.id != clean.id } + clean) }
+        return clean
+    }
+
+    /** Removes a goal with its history; returns both so it can be brought back. */
+    fun deleteGoal(id: String): Pair<Goal, List<Saving>>? {
+        val goal = mState.value.goals.firstOrNull { it.id == id } ?: return null
+        val history = mState.value.savings.filter { it.goalId == id }
+        edit { s -> s.copy(goals = s.goals.filter { it.id != id }, savings = s.savings.filter { it.goalId != id }) }
+        return goal to history
+    }
+
+    fun restoreGoal(goal: Goal, history: List<Saving>) = edit { s -> s.copy(goals = s.goals.filter { it.id != goal.id } + goal, savings = s.savings.filter { it.goalId != goal.id } + history) }
+
+    fun addSaving(v: Saving): Saving {
+        val clean = v.copy(id = v.id.ifBlank { UUID.randomUUID().toString() }, note = v.note.trim().take(200))
+        edit { s -> s.copy(savings = s.savings.filter { it.id != clean.id } + clean) }
+        return clean
+    }
+
+    fun deleteSaving(id: String): Saving? {
+        val old = mState.value.savings.firstOrNull { it.id == id } ?: return null
+        edit { s -> s.copy(savings = s.savings.filter { it.id != id }) }
+        return old
+    }
+
     fun exportJson(): String = GsonBuilder().setPrettyPrinting().create().toJson(mState.value)
 
     /** Adds operations and categories from a backup; ones already here (same id) stay as they are. Returns how many operations were added. */
@@ -56,7 +84,10 @@ class Store(context: Context) {
             val cats = s.categories.map { it.id }.toSet()
             val ops = s.operations.map { it.id }.toSet()
             val newOps = other.operations.filter { it.id !in ops }.also { added = it.size }
-            s.copy(categories = s.categories + other.categories.filter { it.id !in cats }, operations = s.operations + newOps)
+            val goals = s.goals.map { it.id }.toSet()
+            val savings = s.savings.map { it.id }.toSet()
+            s.copy(categories = s.categories + other.categories.filter { it.id !in cats }, operations = s.operations + newOps,
+                goals = s.goals + other.goals.filter { it.id !in goals }, savings = s.savings + other.savings.filter { it.id !in savings })
         }
         return added
     }
@@ -94,6 +125,8 @@ class Store(context: Context) {
             o.copy(kind = o.kind ?: Kind.EXPENSE, categoryId = o.categoryId ?: "other", note = o.note ?: "", date = o.date ?: LocalDate.now().toString())
         },
         settings = (s.settings ?: Settings()).let { it.copy(currency = it.currency ?: "₽") },
+        goals = (s.goals ?: emptyList()).filter { it?.id != null }.map { g -> g.copy(name = g.name ?: "Копилка", emoji = g.emoji ?: "🐷", deadline = g.deadline ?: "") },
+        savings = (s.savings ?: emptyList()).filter { it?.id != null && it.goalId != null && it.amount != 0L }.map { v -> v.copy(date = v.date ?: LocalDate.now().toString(), note = v.note ?: "") },
     )
 
     private fun write(s: Saved) {

@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.mani.money.data.Category
+import app.mani.money.data.Goal
+import app.mani.money.data.Saving
 import app.mani.money.data.Operation
 import app.mani.money.data.Saved
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +34,15 @@ class MoneyViewModel(application: Application) : AndroidViewModel(application) {
     }
     fun saveCategory(c: Category) = store.saveCategory(c)
     fun removeCategory(c: Category) { store.removeCategory(c.id); note(Note("Категория «${c.name}» убрана")) }
+    fun saveGoal(g: Goal) = store.saveGoal(g)
+    fun deleteGoal(g: Goal) { val saved = store.deleteGoal(g.id) ?: return; note(Note("Копилка «${g.name}» удалена") { store.restoreGoal(saved.first, saved.second) }) }
+    fun addSaving(v: Saving) {
+        store.addSaving(v)
+        val s = state.value
+        val goal = s.goals.firstOrNull { it.id == v.goalId }
+        if (goal != null && v.amount > 0 && goal.target > 0 && s.saved(goal.id) >= goal.target && s.saved(goal.id) - v.amount < goal.target) note(Note("🎉 Цель «${goal.name}» достигнута!"))
+    }
+    fun deleteSaving(v: Saving) { store.deleteSaving(v.id) ?: return; note(Note("Запись удалена") { store.addSaving(v) }) }
     fun currency(value: String) = store.settings { it.copy(currency = value) }
     fun budget(kopecks: Long) = store.settings { it.copy(budget = kopecks.coerceAtLeast(0)) }
 

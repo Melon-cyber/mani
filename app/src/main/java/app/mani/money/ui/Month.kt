@@ -132,6 +132,7 @@ fun slices(state: Saved, month: YearMonth, kind: Kind): List<Slice> {
                         Money("Остаток", earned - spent, currency, if (earned - spent >= 0) SoftWhite else Expense)
                     }
                 }
+                SavedThisMonth(state, month, currency)
                 if (budget > 0) {
                     val share = (spent.toFloat() / budget).coerceIn(0f, 1f)
                     val over = spent > budget

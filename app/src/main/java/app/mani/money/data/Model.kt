@@ -39,12 +39,50 @@ data class Settings(
     val budget: Long = 0,
 )
 
+/** Something to save up for: a target sum and, if wanted, a date to reach it by. */
+data class Goal(
+    val id: String,
+    val name: String,
+    val emoji: String = "🐷",
+    val color: Long = 0xFFA5B4FF,
+    /** Target in kopecks. */
+    val target: Long = 0,
+    /** "2027-06-01", or empty when there is no deadline. */
+    val deadline: String = "",
+    val created: Long = System.currentTimeMillis(),
+)
+
+/** Money put into a goal (positive) or taken out of it (negative), in kopecks. */
+data class Saving(
+    val id: String,
+    val goalId: String,
+    val amount: Long,
+    val date: String = LocalDate.now().toString(),
+    val note: String = "",
+    val created: Long = System.currentTimeMillis(),
+) {
+    val month: YearMonth get() = runCatching { YearMonth.from(LocalDate.parse(date)) }.getOrDefault(YearMonth.now())
+}
+
 data class Saved(
     val version: Int = 1,
     val categories: List<Category> = DEFAULT_CATEGORIES,
     val operations: List<Operation> = emptyList(),
     val settings: Settings = Settings(),
-)
+    val goals: List<Goal> = emptyList(),
+    val savings: List<Saving> = emptyList(),
+) {
+    fun saved(goalId: String): Long = savings.filter { it.goalId == goalId }.sumOf { it.amount }
+}
+
+/** How much to put aside each month to reach the goal by its date, or null without a date. */
+fun monthlyNeed(goal: Goal, saved: Long, today: LocalDate = LocalDate.now()): Long? {
+    val deadline = runCatching { LocalDate.parse(goal.deadline) }.getOrNull() ?: return null
+    val left = goal.target - saved
+    if (left <= 0) return 0
+    val months = java.time.temporal.ChronoUnit.MONTHS.between(YearMonth.from(today), YearMonth.from(deadline)).coerceAtLeast(0) + 1
+    return (left + months - 1) / months
+}
 
 val DEFAULT_CATEGORIES: List<Category> = listOf(
     Category("food", "Продукты", "🛒", 0xFF6EE7A8),
