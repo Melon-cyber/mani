@@ -1,0 +1,8 @@
+<resources>
+    <color name="brand_background">#1A1B2E</color>
+    <style name="Theme.Mani" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">#0F0F14</item>
+        <item name="android:colorAccent">#A5B4FF</item>
+    </style>
+</resources>
