@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Mani mark: a stack of two coins with a rising arrow. 108dp adaptive canvas, safe zone 66dp. -->
+<!-- Mani: the letter M as a rising chart with a coin stack.
+     Drawn on a 108-unit square and scaled into the visible middle of the 108dp adaptive canvas. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#A5B4FF" android:pathData="M30,62a16,6 0,1 0,32 0a16,6 0,1 0,-32 0z" />
-    <path android:fillColor="#7C8CF0" android:pathData="M30,62v8a16,6 0,0 0,32 0v-8a16,6 0,0 1,-32 0z" />
-    <path android:fillColor="#D6DCFF" android:pathData="M30,50a16,6 0,1 0,32 0a16,6 0,1 0,-32 0z" />
-    <path android:fillColor="#A5B4FF" android:pathData="M30,50v8a16,6 0,0 0,32 0v-8a16,6 0,0 1,-32 0z" />
-    <path android:strokeColor="#6EE7A8" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"
-        android:pathData="M64,66L72,52L78,58L84,40M76,40H84V48" />
+    <group android:scaleX="0.62" android:scaleY="0.62" android:translateX="20.52" android:translateY="20.52">
+        <path android:pathData="M24,80L36,40L54,64L74,30"
+            android:fillColor="#00000000"
+            android:strokeColor="#FFA5B4FF"
+            android:strokeWidth="9"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path android:pathData="M62,28H76V42"
+            android:fillColor="#00000000"
+            android:strokeColor="#FFA5B4FF"
+            android:strokeWidth="9"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path android:pathData="M68.0,74.0a12.0,5.0 0,1 0,24.0,0a12.0,5.0 0,1 0,-24.0,0z"
+            android:fillColor="#FFD6DCFF" />
+        <path android:pathData="M68,74v-6a12,5 0 0 0 24,0v6"
+            android:fillColor="#FF7C8CF0" />
+        <path android:pathData="M68.0,68.0a12.0,5.0 0,1 0,24.0,0a12.0,5.0 0,1 0,-24.0,0z"
+            android:fillColor="#FFD6DCFF" />
+    </group>
 </vector>

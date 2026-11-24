@@ -102,7 +102,7 @@ fun slices(state: Saved, month: YearMonth, kind: Kind): List<Slice> {
     }
 }
 
-@Composable fun MonthScreen(state: Saved, month: YearMonth, changeMonth: (YearMonth) -> Unit, edit: (Operation) -> Unit, settings: () -> Unit) {
+@Composable fun MonthScreen(state: Saved, month: YearMonth, changeMonth: (YearMonth) -> Unit, edit: (Operation) -> Unit, settings: () -> Unit, recurring: () -> Unit = {}) {
     val currency = state.settings.currency
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     val ops = state.operations.filter { it.month == month }
@@ -143,6 +143,7 @@ fun slices(state: Saved, month: YearMonth, kind: Kind): List<Slice> {
                 }
             }
         }
+        if (month == YearMonth.now()) item { RecurringSummary(state, recurring) }
         if (parts.isNotEmpty()) item {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
                 parts.take(if (filter == null) 6 else parts.size).forEach { s ->

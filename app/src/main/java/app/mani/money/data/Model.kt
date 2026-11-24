@@ -71,6 +71,7 @@ data class Saved(
     val settings: Settings = Settings(),
     val goals: List<Goal> = emptyList(),
     val savings: List<Saving> = emptyList(),
+    val recurring: List<Recurring> = emptyList(),
 ) {
     fun saved(goalId: String): Long = savings.filter { it.goalId == goalId }.sumOf { it.amount }
 }

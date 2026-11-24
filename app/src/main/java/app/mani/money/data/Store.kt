@@ -74,6 +74,29 @@ class Store(context: Context) {
         return old
     }
 
+    fun saveRecurring(r: Recurring): Recurring {
+        val clean = r.copy(id = r.id.ifBlank { UUID.randomUUID().toString() }, name = r.name.trim().take(60).ifBlank { "Платёж" }, day = r.day.coerceIn(1, 31), month = r.month.coerceIn(1, 12))
+        edit { s -> s.copy(recurring = s.recurring.filter { it.id != clean.id } + clean) }
+        return clean
+    }
+
+    fun deleteRecurring(id: String) = edit { s -> s.copy(recurring = s.recurring.filter { it.id != id }) }
+
+    /** Writes down regular payments that came due up to [today]. Returns how many operations were added. */
+    fun applyRecurring(today: LocalDate): Int {
+        var added = 0
+        edit { s ->
+            val ops = mutableListOf<Operation>()
+            val updated = s.recurring.map { r ->
+                if (r.auto) r.missed(today).forEach { d -> ops += Operation(UUID.randomUUID().toString(), r.amount, r.kind, r.categoryId, r.name, d.toString()) }
+                r.copy(until = today.toString())
+            }
+            added = ops.size
+            s.copy(recurring = updated, operations = s.operations + ops)
+        }
+        return added
+    }
+
     fun exportJson(): String = GsonBuilder().setPrettyPrinting().create().toJson(mState.value)
 
     /** Adds operations and categories from a backup; ones already here (same id) stay as they are. Returns how many operations were added. */
@@ -86,8 +109,10 @@ class Store(context: Context) {
             val newOps = other.operations.filter { it.id !in ops }.also { added = it.size }
             val goals = s.goals.map { it.id }.toSet()
             val savings = s.savings.map { it.id }.toSet()
+            val recurring = s.recurring.map { it.id }.toSet()
             s.copy(categories = s.categories + other.categories.filter { it.id !in cats }, operations = s.operations + newOps,
-                goals = s.goals + other.goals.filter { it.id !in goals }, savings = s.savings + other.savings.filter { it.id !in savings })
+                goals = s.goals + other.goals.filter { it.id !in goals }, savings = s.savings + other.savings.filter { it.id !in savings },
+                recurring = s.recurring + other.recurring.filter { it.id !in recurring })
         }
         return added
     }
@@ -127,6 +152,9 @@ class Store(context: Context) {
         settings = (s.settings ?: Settings()).let { it.copy(currency = it.currency ?: "₽") },
         goals = (s.goals ?: emptyList()).filter { it?.id != null }.map { g -> g.copy(name = g.name ?: "Копилка", emoji = g.emoji ?: "🐷", deadline = g.deadline ?: "") },
         savings = (s.savings ?: emptyList()).filter { it?.id != null && it.goalId != null && it.amount != 0L }.map { v -> v.copy(date = v.date ?: LocalDate.now().toString(), note = v.note ?: "") },
+        recurring = (s.recurring ?: emptyList()).filter { it?.id != null && it.categoryId != null && it.amount > 0 }.map { r ->
+            r.copy(name = r.name ?: "Платёж", kind = r.kind ?: Kind.EXPENSE, period = r.period ?: Recurring.MONTH, until = r.until ?: LocalDate.now().toString())
+        },
     )
 
     private fun write(s: Saved) {

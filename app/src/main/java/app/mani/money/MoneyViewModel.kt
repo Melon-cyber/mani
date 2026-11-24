@@ -9,6 +9,9 @@ import app.mani.money.data.Goal
 import app.mani.money.data.Saving
 import app.mani.money.data.Operation
 import app.mani.money.data.Saved
+import app.mani.money.data.Kind
+import app.mani.money.data.Recurring
+import app.mani.money.data.limitNote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +30,24 @@ class MoneyViewModel(application: Application) : AndroidViewModel(application) {
     val note = mNote.asStateFlow()
 
     fun note(value: Note?) { mNote.value = value }
-    fun save(op: Operation) = store.saveOperation(op)
+    /** Saves an operation and says so when a category limit or the month's budget is close or crossed. */
+    fun save(op: Operation): Operation {
+        val before = state.value.operations.filter { it.id != op.id && it.kind == Kind.EXPENSE && it.categoryId == op.categoryId && it.month == op.month }.sumOf { it.amount }
+        val saved = store.saveOperation(op)
+        limitNote(state.value, saved, before)?.let { note(Note(it)) }
+        return saved
+    }
+
+    private val mAdd = MutableStateFlow(0)
+    /** Grows each time the widget asks for a new expense. */
+    val addRequests = mAdd.asStateFlow()
+    fun requestAdd() { mAdd.value += 1 }
+
+    fun saveRecurring(r: Recurring) {
+        store.saveRecurring(r)
+        note(Note(if (r.auto) "Сохранено. В день платежа Мани запишет его сама" else "Сохранено"))
+    }
+    fun deleteRecurring(r: Recurring) { store.deleteRecurring(r.id); note(Note("Платёж «${r.name}» удалён") { store.saveRecurring(r) }) }
     fun delete(op: Operation) {
         store.deleteOperation(op.id) ?: return
         note(Note("Операция удалена") { store.saveOperation(op) })

@@ -43,6 +43,9 @@ import java.time.YearMonth
     val month = YearMonth.parse(monthText)
     var editing by remember { mutableStateOf<Operation?>(null) }
     var settingsOpen by remember { mutableStateOf(false) }
+    var recurringOpen by remember { mutableStateOf(false) }
+    if (recurringOpen) RecurringSheet(model, state, close = { recurringOpen = false })
+    val addRequests by model.addRequests.collectAsStateWithLifecycle()
     var goalId by rememberSaveable { mutableStateOf<String?>(null) }
     var goalEditor by remember { mutableStateOf<Goal?>(null) }
     val goal = state.goals.firstOrNull { it.id == goalId }
@@ -54,6 +57,12 @@ import java.time.YearMonth
         val result = snackbar.showSnackbar(n.text, actionLabel = if (n.undo != null) "Вернуть" else null, duration = SnackbarDuration.Short)
         if (result == SnackbarResult.ActionPerformed) n.undo?.invoke()
         model.note(null)
+    }
+    LaunchedEffect(addRequests) {
+        if (addRequests == 0) return@LaunchedEffect
+        tab = 0; monthText = YearMonth.now().toString()
+        val first = state.categories.filter { it.kind == Kind.EXPENSE && !it.archived }.minByOrNull { it.order }?.id.orEmpty()
+        editing = Operation("", 0, Kind.EXPENSE, first)
     }
     BackHandler(enabled = tab != 0 || goal != null) { if (goal != null) goalId = null else tab = 0 }
     goalEditor?.let { g -> GoalEditor(g, state.settings.currency, close = { goalEditor = null }, save = { val saved = model.saveGoal(it); goalEditor = null; goalId = saved.id }, delete = null) }
@@ -87,7 +96,7 @@ import java.time.YearMonth
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (tab) {
-                0 -> MonthScreen(state, month, changeMonth = { monthText = it.toString() }, edit = { editing = it }, settings = { settingsOpen = true })
+                0 -> MonthScreen(state, month, changeMonth = { monthText = it.toString() }, edit = { editing = it }, settings = { settingsOpen = true }, recurring = { recurringOpen = true })
                 1 -> AnalyticsScreen(state, month, changeMonth = { monthText = it.toString() })
                 else -> if (goal != null) GoalScreen(model, state, goal, back = { goalId = null })
                     else SavingsScreen(model, state, open = { goalId = it.id }, create = { goalEditor = Goal("", "") })
