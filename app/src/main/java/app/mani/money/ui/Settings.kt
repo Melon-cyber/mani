@@ -64,6 +64,8 @@ import app.mani.money.data.formatMoney
 import app.mani.money.data.parseAmount
 import java.math.BigDecimal
 import java.time.LocalDate
+import androidx.compose.material3.Switch
+import app.mani.money.system.LocalAppLock
 
 private val CURRENCIES = listOf("₽", "₸", "Br", "сум", "₴", "$", "€")
 
@@ -118,12 +120,29 @@ private fun plainAmount(kopecks: Long) = if (kopecks <= 0) "" else BigDecimal(ko
                 }
             }
             HorizontalDivider(color = Line)
+            Text("Защита", style = MaterialTheme.typography.titleMedium)
+            LockRow()
+            HorizontalDivider(color = Line)
             Text("Данные", style = MaterialTheme.typography.titleMedium)
             ActionRow("Выгрузить в таблицу", "Файл CSV для Excel или Google Таблиц") { csv.launch("mani-${LocalDate.now()}.csv") }
             ActionRow("Сохранить копию", "Всё в одном файле, для переноса на новый телефон") { backup.launch("mani-${LocalDate.now()}.json") }
             ActionRow("Восстановить из копии", "Добавит операции из файла к тем, что уже есть") { restore.launch(arrayOf("application/json", "*/*")) }
             Text("Мани ${BuildConfig.VERSION_NAME} · всё хранится только на этом телефоне", color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp))
         }
+    }
+}
+
+/** Fingerprint or phone-code protection; off until the listener turns it on and proves it works. */
+@Composable private fun LockRow() {
+    val lock = LocalAppLock.current ?: return
+    val possible = remember { lock.possible() }
+    Row(Modifier.fillMaxWidth().clickable(enabled = possible) { lock.toggle() }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("Вход по отпечатку", style = MaterialTheme.typography.titleSmall)
+            Text(if (possible) "Мани спросит отпечаток или код телефона, когда открываешь её"
+                else "Сначала включи блокировку экрана в настройках телефона", style = MaterialTheme.typography.bodySmall, color = Muted)
+        }
+        Switch(checked = lock.on, onCheckedChange = null, enabled = possible, modifier = Modifier.padding(start = 12.dp))
     }
 }
 

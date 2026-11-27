@@ -14,8 +14,8 @@ android {
         applicationId = "app.mani.money"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.4.0"
     }
     // One signing key for every build, so updates install over the app with its data.
     // keystore.properties (not in Git) points to the key; without it the standard debug key of this computer is used.
@@ -51,6 +51,7 @@ android {
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.10.01"))
     implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")

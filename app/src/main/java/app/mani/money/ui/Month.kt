@@ -76,9 +76,10 @@ fun monthTitle(month: YearMonth): String =
 
 data class Slice(val category: Category, val sum: Long)
 
-fun slices(state: Saved, month: YearMonth, kind: Kind): List<Slice> {
+/** Sums per category for a month; with [upTo], only its days 1..upTo. */
+fun slices(state: Saved, month: YearMonth, kind: Kind, upTo: Int = 31): List<Slice> {
     val byId = state.categories.associateBy { it.id }
-    return state.operations.filter { it.kind == kind && it.month == month }.groupBy { it.categoryId }
+    return state.operations.filter { it.kind == kind && it.month == month && it.day.dayOfMonth <= upTo }.groupBy { it.categoryId }
         .map { (id, ops) -> Slice(byId[id] ?: Category(id, "Без категории", "❔", 0xFFA3A2B3, kind), ops.sumOf { it.amount }) }
         .sortedByDescending { it.sum }
 }
